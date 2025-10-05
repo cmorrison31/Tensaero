@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "build", "twine"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Tensaero"
+version = "0.1.0"
+description = "A 3DOF modeling & simulation suite"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE.txt" }
+keywords = ["Modeling", "Simulation", "Aerospace", "3DOF", "Flight", "Dynmaics"]
+authors = [{ name = "Caleb Morrison", email = "cmorrison8191@gmail.com" }]
+maintainers = [{ name = "Caleb Morrison", email = "cmorrison8191@gmail.com" }]
+
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Atmospheric Science",
+  "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = ["numpy", "TerraFrame"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+"Source" = "https://github.com/cmorrison31/Tensaero"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
