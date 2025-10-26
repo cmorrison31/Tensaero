@@ -106,4 +106,4 @@ class EarthStateGeoid(EarthStateBase):
 
         answer = self._get_transformation_and_angular_velocity(time)
 
-        return answer[0]
+        return answer[1]
