@@ -16,8 +16,14 @@ class ReferenceFrames(Enum):
     Body = 3
     Wind = 4
     FlightPath = 6
-    Unknown = 7
 
+    @classmethod
+    def _missing_(cls, value: str):
+        value = value.lower()
+        for member in cls:
+            if member.name.lower() == value:
+                return member
+        return None
 
 class Vector(ABC):
     data: npt.NDArray[np.float64]
@@ -61,22 +67,34 @@ class AngularVelocity(Matrix):
 
 class StateFrame:
     def __init__(self):
-        # TODO: Change these parameters to the typed equivalents
+        self.s_bi_i = Position(np.nan * np.zeros((3, 1)),
+                               ReferenceFrames.EarthCenteredInertial)
+        self.s_bi_g = Position(np.nan * np.zeros((3, 1)),
+                               ReferenceFrames.Geographic)
+
+        self.v_bi_i = Velocity(np.nan * np.zeros((3, 1)),
+                               ReferenceFrames.EarthCenteredInertial)
+        self.v_bi_g = Velocity(np.nan * np.zeros((3, 1)),
+                               ReferenceFrames.Geographic)
+
+        self.T_GE = Transformation(np.nan * np.zeros((3, 1)),
+                                     ReferenceFrames.EarthCenteredEarthFixed,
+                                     ReferenceFrames.Geographic)
+        self.T_EI = Transformation(np.nan * np.zeros((3, 1)),
+                                     ReferenceFrames.EarthCenteredInertial,
+                                     ReferenceFrames.EarthCenteredEarthFixed)
+        self.T_IG = Transformation(np.nan * np.zeros((3, 1)),
+                                     ReferenceFrames.Geographic,
+                                     ReferenceFrames.EarthCenteredInertial)
+        self.T_VG = Transformation(np.nan * np.zeros((3, 1)),
+                                     ReferenceFrames.Geographic,
+                                     ReferenceFrames.FlightPath)
+
+        self.omega_ei_i = Transformation(np.nan * np.zeros((3, 1)),
+                                     ReferenceFrames.EarthCenteredInertial,
+                                     ReferenceFrames.EarthCenteredEarthFixed)
+
         self.time = np.nan
-
-        self.s_bi_i = np.nan * np.zeros((3, 1))
-        self.s_bi_g = np.nan * np.zeros((3, 1))
-
-        self.v_bi_i = np.nan * np.zeros((3, 1))
-        self.v_bi_g = np.nan * np.zeros((3, 1))
-
-        self.T_GE = np.nan * np.zeros((3, 3))
-        self.T_EI = np.nan * np.zeros((3, 3))
-        self.T_IG = np.nan * np.zeros((3, 3))
-        self.T_VG = np.nan * np.zeros((3, 3))
-
-        self.omega_ei_i = np.nan * np.zeros((3, 3))
-
         self.potential_energy = np.nan
         self.kinetic_energy = np.nan
         self.total_energy = np.nan
