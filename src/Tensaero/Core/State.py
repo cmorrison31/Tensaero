@@ -3,10 +3,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from abc import ABC
+from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
+from TerraFrame.Utilities.Time import JulianDate
 
 
 class ReferenceFrames(Enum):
@@ -24,6 +26,7 @@ class ReferenceFrames(Enum):
             if member.name.lower() == value:
                 return member
         return None
+
 
 class Vector(ABC):
     data: npt.NDArray[np.float64]
@@ -65,43 +68,30 @@ class AngularVelocity(Matrix):
         super().__init__(data, reference_frame_from, reference_frame_to)
 
 
+@dataclass
 class StateFrame:
     def __init__(self):
-        self.s_bi_i = Position(np.nan * np.zeros((3, 1)),
-                               ReferenceFrames.EarthCenteredInertial)
-        self.s_bi_g = Position(np.nan * np.zeros((3, 1)),
-                               ReferenceFrames.Geographic)
+        s_bi_i: Position
+        s_bi_g: Position
 
-        self.v_bi_i = Velocity(np.nan * np.zeros((3, 1)),
-                               ReferenceFrames.EarthCenteredInertial)
-        self.v_bi_g = Velocity(np.nan * np.zeros((3, 1)),
-                               ReferenceFrames.Geographic)
+        v_bi_i: Velocity
+        v_bi_g: Velocity
 
-        self.T_GE = Transformation(np.nan * np.zeros((3, 1)),
-                                     ReferenceFrames.EarthCenteredEarthFixed,
-                                     ReferenceFrames.Geographic)
-        self.T_EI = Transformation(np.nan * np.zeros((3, 1)),
-                                     ReferenceFrames.EarthCenteredInertial,
-                                     ReferenceFrames.EarthCenteredEarthFixed)
-        self.T_IG = Transformation(np.nan * np.zeros((3, 1)),
-                                     ReferenceFrames.Geographic,
-                                     ReferenceFrames.EarthCenteredInertial)
-        self.T_VG = Transformation(np.nan * np.zeros((3, 1)),
-                                     ReferenceFrames.Geographic,
-                                     ReferenceFrames.FlightPath)
+        T_GE: Transformation
+        T_EI: Transformation
+        T_IG: Transformation
+        T_VG: Transformation
 
-        self.omega_ei_i = Transformation(np.nan * np.zeros((3, 1)),
-                                     ReferenceFrames.EarthCenteredInertial,
-                                     ReferenceFrames.EarthCenteredEarthFixed)
+        omega_ei_i: AngularVelocity
 
-        self.time = np.nan
-        self.potential_energy = np.nan
-        self.kinetic_energy = np.nan
-        self.total_energy = np.nan
+        time: JulianDate.JulianDate
+        potential_energy: float
+        kinetic_energy: float
+        total_energy: float
 
-        self.longitude = np.nan
-        self.latitude = np.nan
-        self.altitude = np.nan
-        self.speed = np.nan
-        self.heading_angle = np.nan
-        self.flight_path_angle = np.nan
+        longitude: float
+        latitude: float
+        altitude: float
+        speed: float
+        heading_angle: float
+        flight_path_angle: float
