@@ -10,8 +10,7 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Annotated, Callable
 
-from pydantic import BaseModel, field_validator, Field
-from pydantic import DirectoryPath, BeforeValidator
+from pydantic import BaseModel, field_validator, Field, BeforeValidator
 
 from Tensaero.Core.State import ReferenceFrames
 
@@ -96,8 +95,6 @@ def user_function_validator(v: str):
 class SimObjects(BaseModel):
     name: str
     object_type: SimObjectTypes = Field(default='general', alias="object type")
-    functions_path: DirectoryPath = Field(default=Path.cwd(),
-                                          alias="functions path")
 
     accelerations_function: Annotated[
         Callable, BeforeValidator(user_function_validator)] = (
