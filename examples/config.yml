@@ -1,25 +1,28 @@
 ---
 sim objects:
   # Name can be any valid string
-  name: test point
-  # Options are general, ground, or fixed point
-  object type: fixed point
-  # Optional path for user supplied functions. If not provided, the script
-  # directory is used
-  functions path: /home/cmorrison
-  # Function the solver calls for acceleration on the sim object
-  # Format is "Package.file:function_name"
-  accelerations function: usr_code.test_point:accelerations
-  # Function the simulation calls for logging sim object information
-  # Format is "Package.file:function_name"
-  logging function: usr_code.test_point:logging
-  initial conditions:
-    position:
-      data: [ 0, 0, 0 ]
-      reference frame: earth centered inertial
-    velocity:
-      data: [ 0, 0, 0 ]
-      reference frame: earth centered, earth fixed
-    orientation:
-      heading angle: 0
-      flight path angle: 0
+  - name: test point
+    # Options are general, ground, or fixed point
+    object type: fixed point
+    # Optional path for user supplied functions. If not provided, the script
+    # directory is used
+    functions path: /home/cmorrison
+    # Function the solver calls for acceleration on the sim object
+    # Format is "Package.file:function_name"
+    accelerations function: usr_code.test_point:accelerations
+    # Function the simulation calls for logging sim object information
+    # Format is "Package.file:function_name"
+    logging function: usr_code.test_point:logging
+    initial conditions:
+      position:
+        data: [ 0, 0, 0 ]
+        reference frame: earth centered inertial
+      velocity:
+        data: [ 0, 0, 0 ]
+        reference frame: earth centered, earth fixed
+      orientation:
+        heading angle: 0
+        flight path angle: 0
+    solver: euler
+time step: 0.1
+log file path: /some/path/file.log

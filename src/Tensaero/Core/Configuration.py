@@ -17,6 +17,12 @@ class SimObjectTypes(Enum):
     ground = 'ground'
     fixed_point = 'fixed point'
 
+class SolverType(Enum):
+    default = 'default'
+    velocity_verlet = 'velocity verlet'
+    euler = 'euler'
+    fixed = 'fixed'
+
 
 def reference_frames_validator(value: str):
     value = value.strip().replace(",", "")
@@ -100,6 +106,11 @@ class SimObjects(BaseModel):
     initial_conditions: InitialConditions = (
         Field(..., alias="initial conditions"))
 
+    solver: SolverType = Field(SolverType.default)
 
-class ConfigScheme(BaseModel):
-    sim_objects: SimObjects = Field(..., alias="sim objects")
+
+class ConfigSchema(BaseModel):
+    sim_objects: List[SimObjects] = Field(..., alias="sim objects",
+                                          min_length=1)
+    time_step: float = Field(default=1e-3, alias="time step", gt=0)
+    log_file_path: Path = Field(default=Path.cwd(), alias="log file path")
