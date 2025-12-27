@@ -9,6 +9,7 @@ import string
 from enum import Enum
 from pathlib import Path
 from typing import List, Annotated, Callable
+from datetime import datetime
 
 from pydantic import BaseModel, field_validator, Field, BeforeValidator
 
@@ -63,6 +64,13 @@ class InitialConditions(BaseModel):
     orientation: OrientationData
 
 
+def start_time_validator(value: str | datetime):
+    if not isinstance(value, datetime) and value.lower().strip() == "now":
+        value = datetime.now()
+
+    return value
+
+
 def user_function_validator(v: str):
     if not re.match(r"^[\w.]+:[A-Za-z_][\w_]*$", v):
         raise ValueError("Must be of form '<module.path>:<function_name>'")
@@ -113,5 +121,7 @@ class SimObjects(BaseModel):
 class ConfigSchema(BaseModel):
     sim_objects: List[SimObjects] = Field(..., alias="sim objects",
                                           min_length=1)
+    start_time: Annotated[datetime, BeforeValidator(start_time_validator)] = (
+        Field(..., alias="start time"))
     time_step: float = Field(default=1e-3, alias="time step", gt=0)
     log_file_path: Path = Field(default=Path.cwd(), alias="log file path")

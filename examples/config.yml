@@ -4,9 +4,6 @@ sim objects:
   - name: test point
     # Options are general, ground, or fixed point
     object type: fixed point
-    # Optional path for user supplied functions. If not provided, the script
-    # directory is used
-    functions path: /home/cmorrison
     # Function the solver calls for acceleration on the sim object
     # Format is "Package.file:function_name"
     accelerations function: usr_code.test_point:accelerations
@@ -24,5 +21,8 @@ sim objects:
         heading angle: 0
         flight path angle: 0
     solver: euler
+# Can either be the string "now" or an ISO 8601 formatted date and time:
+# 2025-12-27T08:34:22-12:00
+start time: now
 time step: 0.1
 log file path: /some/path/file.log
