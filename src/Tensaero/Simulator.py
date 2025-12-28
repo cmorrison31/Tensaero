@@ -6,6 +6,7 @@ from pathlib import Path
 import yaml
 from Tensaero.Core import Configuration
 from Tensaero.SimObjects import SimObjects
+from Tensaero.Earth import EarthState
 
 
 class Simulator:
@@ -13,6 +14,12 @@ class Simulator:
         self.config_file_path = config_file_path
 
         self.config = self._load_and_validate_config()
+
+        if (self.config.earth_type == Configuration.EarthType.default or
+            self.config.earth_type == Configuration.EarthType.geoid):
+            self.earth = EarthState.EarthStateGeoid()
+        else:
+            self.earth = EarthState.EarthStateSphere()
 
         self._sim_objects = {}
 

@@ -21,8 +21,13 @@ sim objects:
         heading angle: 0
         flight path angle: 0
     solver: euler
+# Optional start time with default value of current time in local time zone.
 # Can either be the string "now" or an ISO 8601 formatted date and time:
 # 2025-12-27T08:34:22-12:00
 start time: now
 time step: 0.1
+# Optional value which defaults to geoid if not specified. Valid values are
+# geoid or spherical. Geoid uses the IAU 2006/2000A precession-nutation model
+# for orientation and angular velocity.
+earth: geoid
 log file path: /some/path/file.log
