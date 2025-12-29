@@ -6,15 +6,15 @@ import importlib
 import inspect
 import re
 import string
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Annotated, Callable
-from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, field_validator, Field, BeforeValidator
 
-from Tensaero.Core.State import ReferenceFrames
+from Tensaero.Core.State import ReferenceFrames, CoordinateSystems
 
 
 class SimObjectTypes(Enum):
@@ -22,11 +22,13 @@ class SimObjectTypes(Enum):
     ground = 'ground'
     fixed_point = 'fixed point'
 
+
 class SolverType(Enum):
     default = 'default'
     velocity_verlet = 'velocity verlet'
     euler = 'euler'
     fixed = 'fixed'
+
 
 class EarthType(Enum):
     default = 'default'
@@ -40,10 +42,26 @@ def reference_frames_validator(value: str):
     value = value.title()
 
     try:
-        return ReferenceFrames(value)
+        val = ReferenceFrames(value)
     except ValueError:
         raise ValueError(f"Invalid value '{value}'. Must be one of: "
                          f"{[x.name for x in ReferenceFrames]}")
+
+    if (val != ReferenceFrames.EarthCenteredInertial and
+            val != ReferenceFrames.EarthCenteredEarthFixed):
+        raise ValueError('Initial conditions can only be provided in '
+                         'Earth Centered Inertial or Earth Centered, '
+                         'Earth Fixed reference frames.')
+
+    return val
+
+
+def coordinate_systems_validator(value: str):
+    try:
+        return CoordinateSystems(value)
+    except ValueError:
+        raise ValueError(f"Invalid value '{value}'. Must be one of: "
+                         f"{[x.name for x in CoordinateSystems]}")
 
 
 class VectorData(BaseModel):
@@ -51,6 +69,9 @@ class VectorData(BaseModel):
     reference_frame: Annotated[
         ReferenceFrames, BeforeValidator(reference_frames_validator)] = (
         Field(..., alias="reference frame"))
+    coordinate_system: Annotated[
+        CoordinateSystems, BeforeValidator(coordinate_systems_validator)] = (
+        Field(CoordinateSystems.Cartesian, alias="coordinate system"))
 
     @field_validator("data")
     @classmethod
@@ -58,6 +79,7 @@ class VectorData(BaseModel):
         if any(not isinstance(x, (int, float)) for x in v):
             raise ValueError("All elements in 'data' must be numeric.")
         return v
+
 
 class OrientationData(BaseModel):
     heading_angle: float = Field(default=0.0, alias="heading angle")

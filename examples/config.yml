@@ -13,7 +13,8 @@ sim objects:
     initial conditions:
       position:
         data: [ 0, 0, 0 ]
-        reference frame: earth centered inertial
+        reference frame: earth centered, earth fixed
+        coordinate system: WGS84
       velocity:
         data: [ 0, 0, 0 ]
         reference frame: earth centered, earth fixed
