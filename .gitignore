@@ -5,6 +5,5 @@
 Tests/**.xml
 test-results-*.xml
 *.webm
-*.png
 *dist
 *build
