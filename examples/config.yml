@@ -6,7 +6,7 @@ sim objects:
     object type: fixed point
     # Function the solver calls for acceleration on the sim object
     # Format is "Package.file:function_name"
-    accelerations function: usr_code.test_point:accelerations
+    acceleration function: usr_code.test_point:acceleration
     # Function the simulation calls for logging sim object information
     # Format is "Package.file:function_name"
     logging function: usr_code.test_point:logging

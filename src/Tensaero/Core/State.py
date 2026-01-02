@@ -172,7 +172,6 @@ class AngularVelocity(Matrix):
 
             rvalue = copy.deepcopy(other)
             rvalue.data = data
-            rvalue.reference_frame =  self.reference_frame_to
 
             return rvalue
 

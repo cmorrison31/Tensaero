@@ -66,8 +66,11 @@ class Simulator:
                     position, velocity = (
                         self._preprocess_initial_conditions(entry))
 
-                    self._sim_objects[entry.name].init_state(jd_utc,
-                                                             position, velocity)
+                    self._sim_objects[entry.name].update_state(jd_utc,
+                                                               position,
+                                                               velocity)
+
+                    self._sim_objects[entry.name].initialize()
 
                 case Configuration.SimObjectTypes.general:
                     continue

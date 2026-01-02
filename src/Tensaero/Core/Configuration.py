@@ -132,9 +132,9 @@ class SimObjects(BaseModel):
     name: str
     object_type: SimObjectTypes = Field(default='general', alias="object type")
 
-    accelerations_function: Annotated[
+    acceleration_function: Annotated[
         Callable, BeforeValidator(user_function_validator)] = (
-        Field(..., alias="accelerations function"))
+        Field(..., alias="acceleration function"))
 
     logging_function: Annotated[
         Callable, BeforeValidator(user_function_validator)] = (
