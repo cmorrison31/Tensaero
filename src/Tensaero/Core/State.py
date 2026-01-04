@@ -85,6 +85,18 @@ class Vector(ABC):
         return rvalue
 
 
+    def __mul__(self, other):
+        if isinstance(other, float):
+            rvalue = copy.deepcopy(self)
+            rvalue.data *= other
+
+            return rvalue
+
+        else:
+            raise RuntimeError(f'Unsupported type "{type(other)}" for '
+                               f'vector multiplication.')
+
+
 class Matrix(ABC):
     data: npt.NDArray[np.float64]
     reference_frame_from: ReferenceFrames
@@ -94,6 +106,19 @@ class Matrix(ABC):
         self.data = data
         self.reference_frame_from = reference_frame_from
         self.reference_frame_to = reference_frame_to
+
+
+class Acceleration(Vector):
+    def __init__(self, data, reference_frame,
+                 coordinate_system=CoordinateSystems.Cartesian):
+        super().__init__(data, reference_frame, coordinate_system)
+
+    @staticmethod
+    def from_vector_data(vec_data):
+        vec = Velocity(vec_data.data, vec_data.reference_frame,
+                       vec_data.coordinate_system)
+
+        return vec
 
 
 class Velocity(Vector):

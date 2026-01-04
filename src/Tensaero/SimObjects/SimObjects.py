@@ -7,18 +7,45 @@ from abc import ABC, abstractmethod
 from TerraFrame.Utilities.Time import JulianDate
 
 from Tensaero.Core import State
+from Tensaero.Core.State import StateFrame
+from Tensaero.Logging import DataLogger
 
 import numpy as np
 
 
 class BaseObject(ABC):
-    def __init__(self, earth, earth_transform):
-        self.state = State.StateFrame
+    def __init__(self, name, earth, earth_transform):
+        self.name = name
+        self.state = State.StateFrame()
         self.earth = earth
         self.earth_transform = earth_transform
+        self.signals: dict[str, DataLogger.LogSignal] = {}
 
-    @abstractmethod
-    def update_state(self, time: JulianDate.JulianDate, position: State.Position,
+        self._initialize_base_log_signals()
+
+    def register_signal(self, name, group: None | str=None,
+                        period: None | float=None):
+        logger = DataLogger.get_logger()
+
+        signal = DataLogger.LogSignal(name, period)
+
+        if group is None:
+            path = f'sim objects/{self.name}'
+            name_id = f'{name}'
+        else:
+            path = f'sim objects/{self.name}/{group}'
+            name_id = f'{group}/{name}'
+
+        logger.register_signal(path, signal)
+
+        self.signals[name_id] = signal
+
+        return signal
+
+    def _initialize_base_log_signals(self):
+        self.register_signal('time', group='state')
+
+    def new_state(self, time: JulianDate.JulianDate, position: State.Position,
                      velocity: State.Velocity):
         position = self._vector_to_cartesian(position)
         velocity = self._vector_to_cartesian(velocity)
@@ -26,21 +53,23 @@ class BaseObject(ABC):
         position = self._position_to_inertial_frame(time, position)
         velocity = self._velocity_to_inertial_frame(time, velocity, position)
 
-        self.state.time = time
+        state_frame = State.StateFrame()
 
-        self.state.T_EI = self.earth_transform.transformation_matrix(time)
-        self.state.omega_ei_i = self.earth_transform.angular_velocity(time)
+        state_frame.time = time
 
-        self.state.s_bi_i = position
-        self.state.v_bi_i = velocity
+        state_frame.T_EI = self.earth_transform.transformation_matrix(time)
+        state_frame.omega_ei_i = self.earth_transform.angular_velocity(time)
 
-        s_bi_e = self.state.T_EI @ self.state.s_bi_i
+        state_frame.s_bi_i = position
+        state_frame.v_bi_i = velocity
+
+        s_bi_e = state_frame.T_EI @ state_frame.s_bi_i
 
         lat, lon, alt = self.earth.lat_lon_alt_from_cartesian(*s_bi_e)
 
-        self.state.longitude = lon
-        self.state.latitude = lat
-        self.state.alt = alt
+        state_frame.longitude = lon
+        state_frame.latitude = lat
+        state_frame.alt = alt
 
         data = np.array(((-np.sin(lat) * np.cos(lon),
                    -np.sin(lat) * np.sin(lon), np.cos(lat)),
@@ -49,22 +78,23 @@ class BaseObject(ABC):
                    -np.cos(lat) * np.sin(lon), -np.sin(lat))),
                  dtype='float')
 
-        self.state.T_GE = (
+        state_frame.T_GE = (
             State.Transformation(data,
                                  State.ReferenceFrames.EarthCenteredEarthFixed,
                                  State.ReferenceFrames.Geographic))
 
-        self.state.T_IG = self.state.T_EI.T @ self.state.T_GE.T
+        state_frame.T_IG = state_frame.T_EI.T @ state_frame.T_GE.T
 
-        v_bi_g = self.state.T_IG.T @ (
-                self.state.v_bi_i - self.state.omega_ei_i @
-                self.state.s_bi_i)
+        v_bi_g = state_frame.T_IG.T @ (
+                state_frame.v_bi_i -
+                State.Velocity.from_vector_data(state_frame.omega_ei_i @
+                state_frame.s_bi_i))
 
         heading_angle, flight_path_angle = (
             self.flight_path_angles_from_geographic(v_bi_g))
 
-        self.state.heading_angle = heading_angle
-        self.state.flight_path_angle = flight_path_angle
+        state_frame.heading_angle = heading_angle
+        state_frame.flight_path_angle = flight_path_angle
 
         chi = heading_angle
         gamma = flight_path_angle
@@ -75,10 +105,23 @@ class BaseObject(ABC):
              (np.sin(gamma) * np.cos(chi), np.sin(gamma) * np.sin(chi),
               np.cos(gamma))), dtype='float')
 
-        self.state.T_VG = (
+        state_frame.T_VG = (
             State.Transformation(data,
                                 State.ReferenceFrames.Geographic,
                                 State.ReferenceFrames.FlightPath))
+
+        return state_frame
+
+    def update_state_from_state(self, state_frame: StateFrame):
+        self.state = state_frame
+
+    @abstractmethod
+    def update_state(self, time: JulianDate.JulianDate, position: State.Position,
+                     velocity: State.Velocity):
+        self.state = self.new_state(time, position, velocity)
+
+    def _log_state(self):
+        self.signals['state/time'].add_data(self.state.time, self.state.time)
 
     @abstractmethod
     def initialize(self):
@@ -143,7 +186,9 @@ class BaseObject(ABC):
                 State.ReferenceFrames.EarthCenteredEarthFixed):
             pos_tmp = copy.deepcopy(position)
             pos_tmp.reference_frame = velocity.reference_frame
-            v_bi_i = velocity + omega_ei_i @ pos_tmp
+            v_tmp = omega_ei_i @ pos_tmp
+            v_tmp = State.Velocity.from_vector_data(v_tmp)
+            v_bi_i = velocity + v_tmp
             v_bi_i.reference_frame = (
                 State.ReferenceFrames.EarthCenteredInertial)
         elif (velocity.reference_frame ==
@@ -177,8 +222,8 @@ class BaseObject(ABC):
 
 
 class FixedGroundPoint(BaseObject):
-    def __init__(self, earth, earth_transform):
-        super().__init__(earth, earth_transform)
+    def __init__(self, name, earth, earth_transform):
+        super().__init__(name, earth, earth_transform)
 
     def update_state(self, time, position, velocity):
         super().update_state(time, position, velocity)

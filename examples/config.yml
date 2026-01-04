@@ -31,4 +31,4 @@ time step: 0.1
 # geoid or spherical. Geoid uses the IAU 2006/2000A precession-nutation model
 # for orientation and angular velocity.
 earth: geoid
-log file path: /some/path/file.log
+log file path: ./file.hdf5
