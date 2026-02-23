@@ -214,22 +214,25 @@ class AngularVelocity(Matrix):
 
 @dataclass
 class StateFrame:
+    s_bi_i: Position
+
+    v_bi_i: Velocity
+
+    T_GE: Transformation
+    T_EI: Transformation
+    T_IG: Transformation
+    T_VG: Transformation
+
+    omega_ei_i: AngularVelocity
+
+    time: JulianDate.JulianDate
+
+    longitude: float
+    latitude: float
+    altitude: float
+    heading_angle: float
+    flight_path_angle: float
+
     def __init__(self):
-        s_bi_i: Position
+        return
 
-        v_bi_i: Velocity
-
-        T_GE: Transformation
-        T_EI: Transformation
-        T_IG: Transformation
-        T_VG: Transformation
-
-        omega_ei_i: AngularVelocity
-
-        time: JulianDate.JulianDate
-
-        longitude: float
-        latitude: float
-        altitude: float
-        heading_angle: float
-        flight_path_angle: float
