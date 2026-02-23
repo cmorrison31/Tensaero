@@ -1,29 +1,29 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import copy
 from pathlib import Path
 from zoneinfo import ZoneInfo
-import h5py
 
 import yaml
 from TerraFrame import Earth
-from TerraFrame.Utilities.Time import JulianDate
 from TerraFrame.Utilities import Conversions
+from TerraFrame.Utilities.Conversions import seconds_to_days
+from TerraFrame.Utilities.Time import JulianDate
 
 from Tensaero.Core import Configuration, State, Solvers
 from Tensaero.Earth import EarthState
+from Tensaero.Logging.DataLogger import DataLogger
 from Tensaero.SimObjects import SimObjects
 
 
 class Simulator:
     def __init__(self, config_file_path: str | Path):
         self.config_file_path = config_file_path
-        self._log_file: None | h5py.File = None
 
         self.config = self._load_and_validate_config()
-
-        self._setup_log_file()
+        self.logger = DataLogger(self.config.log_file_path)
 
         self._sim_objects = {}
         self._solvers = {}
@@ -32,22 +32,28 @@ class Simulator:
     def run(self, time_max=None):
         jd_utc = JulianDate.julian_date_from_pydatetime(
             self.config.start_time.astimezone(ZoneInfo('UTC')))
-        jd_tt = Conversions.any_to_tt(jd_utc)
-        jd_tt_start = copy.deepcopy(jd_tt)
+        jd_tai = Conversions.utc_to_tai(jd_utc)
+        jd_tai_start = copy.deepcopy(jd_tai)
 
         while True:
+            ts_days = seconds_to_days(self.config.time_step)
+
             for sim_obj in self._sim_objects.values():
-                state_frame = (self._solvers[sim_obj.name].
-                next_state(sim_obj.state, self.config.time_step))
+                state_frame = (
+                    self._solvers[sim_obj.name].next_state(sim_obj.state,
+                                                           ts_days))
 
-                (self._sim_objects[sim_obj.name].
-                 update_state_from_state(state_frame))
+                (self._sim_objects[sim_obj.name].update_state_from_state(
+                    state_frame))
 
-            jd_tt += self.config.time_step
+            self.logger.log_all()
 
-            if jd_tt is not None and float(jd_tt - jd_tt_start) >= time_max:
+            jd_tai += ts_days
+
+            if (jd_tai is not None and float(
+                    jd_tai - jd_tai_start) / seconds_to_days(1) >= time_max):
+                self.logger.flush_buffer()
                 break
-
 
     def _load_and_validate_config(self):
         conf = yaml.safe_load(open(self.config_file_path))
@@ -56,16 +62,6 @@ class Simulator:
         conf = Configuration.ConfigSchema(**conf)
 
         return conf
-
-    def _setup_log_file(self):
-        log_file_path: Path = self.config.log_file_path
-
-        if not log_file_path.suffix == '.hdf5':
-            log_file_path = log_file_path.with_suffix('.hdf5')
-
-        log_file_path = log_file_path.absolute()
-
-        self._log_file = h5py.File(log_file_path, "w")
 
     @staticmethod
     def _preprocess_initial_conditions(entry):
@@ -103,11 +99,17 @@ class Simulator:
                     position, velocity = (
                         self._preprocess_initial_conditions(entry))
 
-                    self._sim_objects[entry.name].update_state(jd_tt,
-                                                               position,
+                    self._sim_objects[entry.name].update_state(jd_tt, position,
                                                                velocity)
 
                     self._sim_objects[entry.name].initialize()
+
+                    loggable_state = self._sim_objects[
+                        entry.name].loggable_state()
+
+                    for log_signal in loggable_state:
+                        self.logger.register_sim_object_signal(entry.name,
+                            log_signal)
 
                 case Configuration.SimObjectTypes.general:
                     continue
@@ -119,24 +121,22 @@ class Simulator:
 
             match entry.solver:
                 case Configuration.SolverType.default:
-                    self._solvers[entry.name] = (
-                        Solvers.SolverVelocityVerlet(
-                            entry.acceleration_function, self._sim_objects[
-                        entry.name].new_state))
+                    self._solvers[entry.name] = (Solvers.SolverVelocityVerlet(
+                        entry.acceleration_function,
+                        self._sim_objects[entry.name].new_state))
 
                 case Configuration.SolverType.fixed:
                     self._solvers[entry.name] = (
                         Solvers.SolverFixed(entry.acceleration_function,
-                            self._sim_objects[entry.name].new_state))
+                                            self._sim_objects[
+                                                entry.name].new_state))
 
                 case Configuration.SolverType.euler:
                     self._solvers[entry.name] = (
-                        Solvers.SolverEuler(
-                            entry.acceleration_function,
+                        Solvers.SolverEuler(entry.acceleration_function,
                             self._sim_objects[entry.name].new_state))
 
                 case Configuration.SolverType.velocity_verlet:
-                    self._solvers[entry.name] = (
-                        Solvers.SolverVelocityVerlet(
-                            entry.acceleration_function,
-                            self._sim_objects[entry.name].new_state))
+                    self._solvers[entry.name] = (Solvers.SolverVelocityVerlet(
+                        entry.acceleration_function,
+                        self._sim_objects[entry.name].new_state))

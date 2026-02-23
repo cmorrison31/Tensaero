@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import copy
 from abc import ABC, abstractmethod
 
@@ -8,7 +9,7 @@ from TerraFrame.Utilities.Time import JulianDate
 
 from Tensaero.Core import State
 from Tensaero.Core.State import StateFrame
-from Tensaero.Logging import DataLogger
+from Tensaero.Logging.DataLogger import LogSignalSpecification
 
 import numpy as np
 
@@ -19,31 +20,46 @@ class BaseObject(ABC):
         self.state = State.StateFrame()
         self.earth = earth
         self.earth_transform = earth_transform
-        self.signals: dict[str, DataLogger.LogSignal] = {}
 
-        self._initialize_base_log_signals()
+    @abstractmethod
+    def loggable_state(self):
+        l_state  = [
+            LogSignalSpecification("time", lambda: float(self.state.time),
+                                   'state'),
 
-    def register_signal(self, name, group: None | str=None,
-                        period: None | float=None):
-        logger = DataLogger.get_logger()
+            LogSignalSpecification("s_bi_i", lambda: self.state.s_bi_i.data,
+                                   'state'),
+            LogSignalSpecification("v_bi_i", lambda: self.state.v_bi_i.data,
+                                   'state'),
 
-        signal = DataLogger.LogSignal(name, period)
+            LogSignalSpecification("T_GE", lambda:
+            self.state.T_GE.data.flatten(),
+                                   'state'),
+            LogSignalSpecification("T_EI", lambda: self.state.T_EI.data,
+                                   'state'),
+            LogSignalSpecification("T_IG", lambda: self.state.T_IG.data,
+                                   'state'),
+            LogSignalSpecification("T_VG", lambda: self.state.T_VG.data,
+                                   'state'),
 
-        if group is None:
-            path = f'sim objects/{self.name}'
-            name_id = f'{name}'
-        else:
-            path = f'sim objects/{self.name}/{group}'
-            name_id = f'{group}/{name}'
+            LogSignalSpecification("omega_ei_i",
+                                   lambda: self.state.omega_ei_i.data,
+                                   'state'),
 
-        logger.register_signal(path, signal)
+            LogSignalSpecification("longitude", lambda: self.state.longitude,
+                                   'state'),
+            LogSignalSpecification("latitude", lambda: self.state.latitude,
+                                   'state'),
+            LogSignalSpecification("altitude", lambda: self.state.altitude,
+                                   'state'),
+            LogSignalSpecification("heading_angle",
+                                   lambda: self.state.heading_angle, 'state'),
+            LogSignalSpecification("flight_path_angle",
+                                   lambda: self.state.flight_path_angle,
+                                   'state'),
+                ]
 
-        self.signals[name_id] = signal
-
-        return signal
-
-    def _initialize_base_log_signals(self):
-        self.register_signal('time', group='state')
+        return l_state
 
     def new_state(self, time: JulianDate.JulianDate, position: State.Position,
                      velocity: State.Velocity):
@@ -69,7 +85,7 @@ class BaseObject(ABC):
 
         state_frame.longitude = lon
         state_frame.latitude = lat
-        state_frame.alt = alt
+        state_frame.altitude = alt
 
         data = np.array(((-np.sin(lat) * np.cos(lon),
                    -np.sin(lat) * np.sin(lon), np.cos(lat)),
@@ -119,9 +135,6 @@ class BaseObject(ABC):
     def update_state(self, time: JulianDate.JulianDate, position: State.Position,
                      velocity: State.Velocity):
         self.state = self.new_state(time, position, velocity)
-
-    def _log_state(self):
-        self.signals['state/time'].add_data(self.state.time, self.state.time)
 
     @abstractmethod
     def initialize(self):
@@ -231,3 +244,7 @@ class FixedGroundPoint(BaseObject):
     def initialize(self):
         # Nothing required for a fixed ground point
         pass
+
+    def loggable_state(self):
+        # Fixed ground point only needs to call the base class function
+        return super().loggable_state()

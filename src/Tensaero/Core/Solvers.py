@@ -5,6 +5,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+
 from Tensaero.Core import State
 
 
@@ -50,17 +51,16 @@ class SolverEuler(SolverBase):
     def __init__(self, function_accelerations, functions_new_state):
         super().__init__(function_accelerations, functions_new_state)
 
-
     def next_state(self, current_state, dt):
         accel_i = self.function_accelerations(current_state)
         accel_i = State.Acceleration(accel_i.reshape(3, ),
                                      State.ReferenceFrames.EarthCenteredInertial,
                                      State.CoordinateSystems.Cartesian)
 
-        v_bi_i = (current_state.v_bi_i +
-                  State.Velocity.from_vector_data(accel_i * dt))
-        p_bi_i = (current_state.s_bi_i +
-                  State.Position.from_vector_data(v_bi_i * dt))
+        v_bi_i = (current_state.v_bi_i + State.Velocity.from_vector_data(
+            accel_i * dt))
+        p_bi_i = (current_state.s_bi_i + State.Position.from_vector_data(
+            v_bi_i * dt))
 
         state_frame = self.functions_new_state(dt + current_state.time, p_bi_i,
                                                v_bi_i)
@@ -77,7 +77,6 @@ class SolverVelocityVerlet(SolverBase):
 
     def __init__(self, function_accelerations, functions_new_state):
         super().__init__(function_accelerations, functions_new_state)
-
 
     def next_state(self, current_state, dt):
         accel_bi_i = self.function_accelerations(current_state)

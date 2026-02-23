@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import copy
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
-import copy
 
 import numpy as np
 import numpy.typing as npt
@@ -83,7 +83,6 @@ class Vector(ABC):
         rvalue.data -= self.data
 
         return rvalue
-
 
     def __mul__(self, other):
         if isinstance(other, float):
@@ -163,7 +162,7 @@ class Transformation(Matrix):
 
             rvalue = copy.deepcopy(other)
             rvalue.data = data
-            rvalue.reference_frame =  self.reference_frame_to
+            rvalue.reference_frame = self.reference_frame_to
 
             return rvalue
 
@@ -189,7 +188,7 @@ class AngularVelocity(Matrix):
     @property
     def T(self):
         return AngularVelocity(self.data.T, self.reference_frame_to,
-                              self.reference_frame_from)
+                               self.reference_frame_from)
 
     def __matmul__(self, other):
         if isinstance(other, Position):
@@ -235,4 +234,3 @@ class StateFrame:
 
     def __init__(self):
         return
-
