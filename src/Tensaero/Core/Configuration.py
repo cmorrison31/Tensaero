@@ -10,7 +10,6 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Annotated, Callable
-from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, field_validator, Field, BeforeValidator
 
@@ -94,7 +93,7 @@ class InitialConditions(BaseModel):
 
 def start_time_validator(value: str | datetime):
     if not isinstance(value, datetime) and value.lower().strip() == "now":
-        value = datetime.now(ZoneInfo("localtime"))
+        value = datetime.now().astimezone()
 
     return value
 
@@ -150,7 +149,7 @@ class ConfigSchema(BaseModel):
     sim_objects: List[SimObjects] = Field(..., alias="sim objects",
                                           min_length=1)
     start_time: Annotated[datetime, BeforeValidator(start_time_validator)] = (
-        Field(default=datetime.now(ZoneInfo("localtime")), alias="start time"))
+        Field(default=datetime.now().astimezone(), alias="start time"))
     time_step: float = Field(default=1e-3, alias="time step", gt=0)
     earth_type: EarthType = Field(EarthType.default, alias="earth")
     log_file_path: Path = Field(default=Path.cwd(), alias="log file path")

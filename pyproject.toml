@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
-dependencies = ["numpy", "TerraFrame", "pyyaml", "tzdata", "h5py"]
+dependencies = ["numpy", "TerraFrame", "pyyaml", "pydantic", "h5py"]
 
 [project.optional-dependencies]
 test = ["pytest"]

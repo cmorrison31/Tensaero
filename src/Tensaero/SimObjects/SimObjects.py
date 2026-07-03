@@ -23,6 +23,10 @@ class BaseObject(ABC):
 
     @abstractmethod
     def loggable_state(self):
+        # TODO: Add a function to classes like position and velocity that
+        #  tell the logger what their attributes are and what their size and
+        #  type is. Fall back to numpy info if this function isn't provided
+        #  by a class.
         l_state  = [
             LogSignalSpecification("time", lambda: float(self.state.time),
                                    'state'),

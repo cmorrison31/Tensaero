@@ -9,7 +9,7 @@ def main():
     config_file = "config.yml"
     sim = Simulator.Simulator(config_file)
 
-    sim.run(time_max=1.0)
+    sim.run(time_max=10.0)
 
 
 if __name__ == "__main__":
